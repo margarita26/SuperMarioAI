@@ -10,10 +10,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
+'''
+This class manages open gym ai environment and preproccess the image
+'''
 class MarioManager():
     '''
         Initialize the environment, class contains basic Open Gym AI operations
-        along with deep_q operations done by pytorch
+        along with screen proccessing operations done by pytorch
     '''
     def __init__(self, device):
         self.device = device
@@ -67,32 +70,31 @@ class MarioManager():
 
     def crop_screen(self, screen):
         screen_height = screen.shape[1]
-
-        top = int(screen_height * 0.4)
-        bottom = int(screen_height * 0.8)
+        top = int(screen_height * 0.5)
+        print(top)
+        bottom = int(screen_height * 0.9)
+        print(bottom)
         screen = screen[:,top:bottom, :]
         return screen
 
     def transform_screen_data(self, screen):
         screen = np.ascontiguousarray(screen, dtype = np.float32)/255
         screen = torch.from_numpy(screen)
+        size = t.Compose([t.ToPILImage(),t.Resize((40,90)),t.ToTensor()])
 
-        size = t.Compose([
-        t.ToPILImage(),
-        t.Resize((40,90)),
-        t.ToTensor()
-        ])
-        return size(screen.unsqueeze(0).to(self.device))
+        return size(screen).unsqueeze(0).to(self.device)
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Testing~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 em = MarioManager(device)
 em.reset()
+
 screen = em.render('rgb_array')
+screen = em.get_proccessed_screen()
 
 plt.figure()
-plt.imshow(screen)
-plt.title('Non proccessed screen')
+plt.imshow(screen.squeeze(0).permute(1,2,0), interpolation = 'none')
+plt.title('proccessed screen')
 plt.show()
