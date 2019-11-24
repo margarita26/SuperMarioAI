@@ -4,8 +4,10 @@ from gym_super_mario_bros.actions import RIGHT_ONLY
 from nes_py.wrappers import JoypadSpace
 
 import torch
+import torchvision.transforms as t
 import random
 import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
 
 class MarioManager():
@@ -13,10 +15,10 @@ class MarioManager():
         Initialize the environment, class contains basic Open Gym AI operations
         along with deep_q operations done by pytorch
     '''
-    def __init(self, device):
+    def __init__(self, device):
         self.device = device
         self.env = gym_super_mario_bros.make('SuperMarioBros-v0')
-        self.env = JoypadSpace(env, RIGHT_ONLY)
+        #self.env = JoypadSpace(env, RIGHT_ONLY)
         self.env.reset()
         self.current_screen = None
         self.done = False
@@ -51,3 +53,46 @@ class MarioManager():
             next_screen = self.get_proccessed_screen()
             self.current_screen = next_screen
             return next_screen - screen
+
+    def screen_height(self):
+        return self.get_proccessed_screen().shape[2]
+
+    def screen_width(self):
+        return self.get_proccessed_screen().shape[3]
+
+    def get_proccessed_screen(self):
+        screen = self.render('rgb_array').transpose((2,0,1))
+        screen = self.crop_screen(screen)
+        return self.transform_screen_data(screen)
+
+    def crop_screen(self, screen):
+        screen_height = screen.shape[1]
+
+        top = int(screen_height * 0.4)
+        bottom = int(screen_height * 0.8)
+        screen = screen[:,top:bottom, :]
+        return screen
+
+    def transform_screen_data(self, screen):
+        screen = np.ascontiguousarray(screen, dtype = np.float32)/255
+        screen = torch.from_numpy(screen)
+
+        size = t.Compose([
+        t.ToPILImage(),
+        t.Resize((40,90)),
+        t.ToTensor()
+        ])
+        return size(screen.unsqueeze(0).to(self.device))
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+em = MarioManager(device)
+em.reset()
+screen = em.render('rgb_array')
+
+plt.figure()
+plt.imshow(screen)
+plt.title('Non proccessed screen')
+plt.show()
