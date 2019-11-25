@@ -41,6 +41,7 @@ class MarioManager():
 
     def take_act(self, action):
         observation, reward, self.done, info = self.env.step(action.item()) #uses action.item
+        reward += info['score'] + info['coins']
         return torch.tensor([reward], device = self.device)
 
     def is_starting(self):
@@ -71,9 +72,7 @@ class MarioManager():
     def crop_screen(self, screen):
         screen_height = screen.shape[1]
         top = int(screen_height * 0.5)
-        print(top)
         bottom = int(screen_height * 0.9)
-        print(bottom)
         screen = screen[:,top:bottom, :]
         return screen
 
@@ -84,17 +83,18 @@ class MarioManager():
 
         return size(screen).unsqueeze(0).to(self.device)
 
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Testing~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-em = MarioManager(device)
-em.reset()
-
-screen = em.render('rgb_array')
-screen = em.get_proccessed_screen()
-
-plt.figure()
-plt.imshow(screen.squeeze(0).permute(1,2,0), interpolation = 'none')
-plt.title('proccessed screen')
-plt.show()
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# em = MarioManager(device)
+# em.reset()
+#
+# screen = em.state()
+# print(screen)
+# # screen = em.render('rgb_array')
+# # screen = em.get_proccessed_screen()
+#
+# plt.figure()
+# plt.imshow(screen.squeeze(0).permute(1,2,0), interpolation = 'none')
+# plt.title('proccessed screen')
+# plt.show()
