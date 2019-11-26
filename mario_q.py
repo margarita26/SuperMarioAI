@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
+
 '''
 This class manages open gym ai environment and preproccess the image
 '''
