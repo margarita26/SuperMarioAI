@@ -21,8 +21,7 @@ class MarioManager():
     '''
     def __init__(self, device):
         self.device = device
-        self.env = gym_super_mario_bros.make('SuperMarioBros-v0')
-        #self.env = JoypadSpace(env, RIGHT_ONLY)
+        self.env = JoypadSpace(gym_super_mario_bros.make('SuperMarioBros-v0'),SIMPLE_MOVEMENT)
         self.env.reset()
         self.current_screen = None
         self.done = False
