@@ -41,7 +41,11 @@ class MarioManager():
 
     def take_act(self, action):
         observation, reward, self.done, info = self.env.step(action.item()) #uses action.item
-        reward += info['score'] + info['coins']
+        reward += int(info['score']) + int(info['coins'])
+        # if info['status'] != 'small':
+        #     reward += 500
+        # self.done = info['flag_get']
+        #print(reward)
         return torch.tensor([reward], device = self.device)
 
     def is_starting(self):
