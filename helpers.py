@@ -27,6 +27,9 @@ class ReplayMemory(object):
     def sample(self, batch):
         return random.sample(self.memory, batch)
 
+    def enough_for_sample(batch_size):
+        return len(memory) >= batch_size
+
 class DQN(nn.Module):
     def __init__(self, height, width):
         super(DQN, self).__init__()
