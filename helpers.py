@@ -6,8 +6,26 @@ import torch.optim as optim
 import torch.nn.functional as F
 from collections import namedtuple
 
+
 Transition = namedtuple('Transition',
                     ('state', 'action','reward','next_state'))
+
+class DQN(nn.Module):
+    def __init__(self, img_height, img_width):
+        super().__init__()
+
+        self.fc1 = nn.Linear(in_features=img_height*img_width*3, out_features=784)
+        self.fc2 = nn.Linear(in_features=784, out_features=512)
+        self.fc3 = nn.Linear(in_features=512, out_features=64)
+        self.out = nn.Linear(in_features=64, out_features=5)
+
+    def forward(self, t):
+        t = t.flatten(start_dim=1)
+        t = F.relu(self.fc1(t))
+        t = F.relu(self.fc2(t))
+        t = F.relu(self.fc3(t))
+        t = F.relu(self.out(t))
+        return t
 
 class QValues():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -39,7 +57,7 @@ class ReplayMemory(object):
         if len(self.memory) < self.capacity:
             self.memory.append(transition)
         else:
-            self.memory[posn] = transition
+            self.memory[self.posn] = transition
         self.posn = (self.posn+1)%self.capacity
 
     def sample(self, batch):
@@ -47,20 +65,3 @@ class ReplayMemory(object):
 
     def enough_for_sample(self, batch_size):
         return len(self.memory) >= batch_size
-
-class DQN(nn.Module):
-    def __init__(self, height, width):
-        super().__init__()
-        self.fc1 = nn.Linear(in_features = height*width*3, out_features=24)
-        self.fc2 = nn.Linear(in_features = 24, out_features=32)
-        self.out = nn.Linear(in_features=32, out_features=7)
-
-    # Called with either one element to determine next action, or a batch
-    # during optimization. Returns tensor([[left0exp,right0exp]...]).
-    def forward(self, t):
-        t = t.flatten(start_dim = 1)
-        #activation functions
-        t = F.relu(self.fc1(t))
-        t = F.relu(self.fc2(t))
-        t = self.out(t)
-        return t

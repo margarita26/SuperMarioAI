@@ -21,10 +21,14 @@ class MarioManager():
     '''
     def __init__(self, device):
         self.device = device
-        self.env = JoypadSpace(gym_super_mario_bros.make('SuperMarioBros-v0'),SIMPLE_MOVEMENT)
+        self.env = JoypadSpace(gym_super_mario_bros.make('SuperMarioBros-v0'), RIGHT_ONLY)
         self.env.reset()
         self.current_screen = None
         self.done = False
+        self.current_score = 0
+        self.current_coins = 0
+        self.x = -9999999
+        self.count_same_posn = 0
 
     def reset(self):
         self.env.reset()
@@ -41,12 +45,26 @@ class MarioManager():
 
     def take_act(self, action):
         observation, reward, self.done, info = self.env.step(action.item()) #uses action.item
-        reward += int(info['score']) + int(info['coins'])
-        # if info['status'] != 'small':
-        #     reward += 500
-        # self.done = info['flag_get']
-        #print(reward)
+
+        if self.x == info['x_pos']:
+            self.count_same_posn += 1
+        else:
+            self.count_same_posn = 0
+
+        if reward == 0:
+            reward -= 5
+        if info['life'] < 2:
+            self.done = True
+
+        if self.x < info['x_pos']:
+            reward += 0
+        else:
+            reward -= 10
+        self.x = info['x_pos']
         return torch.tensor([reward], device = self.device)
+
+    def return_count(self):
+        return self.count_same_posn
 
     def is_starting(self):
         return self.current_screen is None
@@ -57,10 +75,11 @@ class MarioManager():
             black_screen = torch.zeros_like(self.current_screen)
             return black_screen
         else:
-            screen = self.current_screen
-            next_screen = self.get_proccessed_screen()
-            self.current_screen = next_screen
-            return next_screen - screen
+            # screen = self.current_screen
+            # next_screen = self.get_proccessed_screen()
+            # self.current_screen = next_screen
+            self.current_screen =  self.get_proccessed_screen()
+            return self.current_screen
 
     def screen_height(self):
         return self.get_proccessed_screen().shape[2]
@@ -83,7 +102,11 @@ class MarioManager():
     def transform_screen_data(self, screen):
         screen = np.ascontiguousarray(screen, dtype = np.float32)/255
         screen = torch.from_numpy(screen)
-        size = t.Compose([t.ToPILImage(),t.Resize((40,90)),t.ToTensor()])
+        size = t.Compose(
+        [t.ToPILImage(),
+        t.Resize((15,40)),
+        #t.Grayscale(num_output_channels=1),
+        t.ToTensor()])
 
         return size(screen).unsqueeze(0).to(self.device)
 
@@ -94,11 +117,17 @@ class MarioManager():
 # em.reset()
 #
 # screen = em.state()
-# print(screen)
-# # screen = em.render('rgb_array')
-# # screen = em.get_proccessed_screen()
 #
+# screen = em.render('rgb_array')
+# em.take_act(0)
+# em.take_act(5)
+# em.take_act(7)
+# em.take_act(3)
+# screen = em.get_proccessed_screen()
+# print(screen)
+#
+# #
 # plt.figure()
-# plt.imshow(screen.squeeze(0).permute(1,2,0), interpolation = 'none')
+# plt.imshow(screen.squeeze(0).permute(1, 2, 0).cpu(), interpolation='none')
 # plt.title('proccessed screen')
 # plt.show()
