@@ -28,6 +28,8 @@ class MarioManager():
         self.current_score = 0
         self.current_coins = 0
         self.x = -9999999
+        self.coins = 0
+        self.score = 0
         self.count_same_posn = 0
 
     def reset(self):
@@ -45,26 +47,47 @@ class MarioManager():
 
     def take_act(self, action):
         observation, reward, self.done, info = self.env.step(action.item()) #uses action.item
-
+        #if new coins
+        if self.coins != info['coins']:
+            reward += int(info['coins']) - self.coins
+            self.coins = int(info['coins'])
+        #if ghost is killed
+        if self.score != info['score']:
+            reward += int(info['score']) - self.score
+            self.score = int(info['score'])
+        #checking for same position in the game, means he is stuck, kill him
         if self.x == info['x_pos']:
             self.count_same_posn += 1
+        #if he moved after being stuck, give a reward
+        elif self.count_same_posn > 0 and self.x != info['x_pos']:
+            self.count_same_posn = 0
+            reward += 15
+        #else reset count to 0
         else:
             self.count_same_posn = 0
+        # if reward == 0:
+        #     reward -= 1
+        #make negative reward even more negative
 
-        if reward == 0:
-            reward -= 5
-        if info['life'] < 2:
-            self.done = True
-
+        #kill him after the first life to speed up training
+        # if info['life'] < 2:
+        #     self.done = True
+        #check that he actually moved to the right
         if self.x < info['x_pos']:
             reward += 0
+        #he didn't more right byt taking the action, pinalize
         else:
-            reward -= 10
-        self.x = info['x_pos']
+            reward -= 1
+            
+        if info['x_pos'] != 40:
+            self.x = info['x_pos']
         return torch.tensor([reward], device = self.device)
 
     def return_count(self):
         return self.count_same_posn
+
+    def return_posn(self):
+        return self.x
 
     def is_starting(self):
         return self.current_screen is None
@@ -119,12 +142,11 @@ class MarioManager():
 # screen = em.state()
 #
 # screen = em.render('rgb_array')
-# em.take_act(0)
-# em.take_act(5)
-# em.take_act(7)
-# em.take_act(3)
+# for i in range(155):
+#     em.take_act(1)
+# for i in range(5):
+#     em.take_act(4)
 # screen = em.get_proccessed_screen()
-# print(screen)
 #
 # #
 # plt.figure()
